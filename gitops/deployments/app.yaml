@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devsecops-microservice
+  namespace: default
+  labels:
+    app: devsecops-microservice
+    security-gate: verified
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devsecops-microservice
+  template:
+    metadata:
+      labels:
+        app: devsecops-microservice
+    spec:
+      containers:
+      - name: webapp
+        image: python:3.11-slim
+        command: ["python", "-m", "http.server", "8000"]
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devsecops-microservice-svc
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: devsecops-microservice
+  ports:
+  - port: 80
+    targetPort: 8000
